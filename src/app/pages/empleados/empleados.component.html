@@ -1,0 +1,34 @@
+<h2 style="text-align:center; color:#333;">Lista de Empleados</h2>
+
+<div style="overflow-x:auto; padding: 10px; border: 2px solid #4CAF50; border-radius: 10px; background-color:#f9f9f9;">
+  <table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+    <thead>
+      <tr style="background-color:#4CAF50; color:white; text-align:center;">
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Apellido</th>
+        <th>DNI</th>
+        <th>Teléfono</th>
+        <th>Dirección</th>
+        <th>Cargo</th>
+        <th>Usuario</th>
+        <th>Contraseña</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let e of empleados" style="text-align:center; border-bottom: 1px solid #ddd; background-color:#fff;">
+        <td>{{ e.idEmpleado }}</td>
+        <td>{{ e.nombre }}</td>
+        <td>{{ e.apellido }}</td>
+        <td>{{ e.dni }}</td>
+        <td>{{ e.telefono }}</td>
+        <td>{{ e.direccion }}</td>
+        <td>{{ e.cargo }}</td>
+        <td>{{ e.usuario }}</td>
+        <td>{{ e.contrasena }}</td>
+        <td [style.color]="e.estado ? 'green' : 'red'">{{ e.estado ? 'Activo' : 'Inactivo' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
