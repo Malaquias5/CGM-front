@@ -1,34 +1,122 @@
-<h2 style="text-align:center; color:#333;">Lista de Clientes</h2>
+<div class="clientes-container">
+  <h2 style="text-align:center; color:#333; margin-bottom: 20px;">👥 Gestión de Clientes</h2>
 
-<div style="overflow-x:auto; padding: 10px; border: 2px solid #2196F3; border-radius: 10px; background-color:#f0f8ff;">
-  <table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-    <thead>
-      <tr style="background-color:#2196F3; color:white; text-align:center;">
-  <th>ID</th>
-  <th>Nombre</th>
-  <th>Apellido</th>
-  <th>Tipo Documento</th>
-  <th>Documento</th>
-  <th>Teléfono</th>
-  <th>Dirección</th>
-  <th>Email</th>
-  <th>Tipo Cliente</th>
+  <!-- BARRA DE BÚSQUEDA -->
+  <div style="margin-bottom: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; display: flex; gap: 10px; align-items: center;">
+    <input 
+      type="text" 
+      [(ngModel)]="searchQuery" 
+      (keyup)="buscar()"
+      placeholder="🔍 Buscar por nombre, apellido, email, documento o teléfono..."
+      style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;"
+    >
+    <span style="color: #666; font-size: 14px;">
+      {{ totalClientes }} cliente{{ totalClientes !== 1 ? 's' : '' }} encontrado{{ totalClientes !== 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  <!-- TABLA DE CLIENTES -->
+  <div style="overflow-x:auto; padding: 10px; border: 2px solid #2196F3; border-radius: 10px; background-color:#f0f8ff;">
+    <table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+      <thead>
+        <tr style="background-color:#2196F3; color:white; text-align:center;">
+    <th>ID</th>
+    <th>Nombre</th>
+    <th>Apellido</th>
+    <th>Tipo Documento</th>
+    <th>Documento</th>
+    <th>Teléfono</th>
+    <th>Dirección</th>
+    <th>Email</th>
+    <th>Tipo Cliente</th>
+    <th>Acciones</th>
+  </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of clientesFiltrados" style="text-align:center; border-bottom: 1px solid #ddd; background-color:#fff;">
+  <td style="padding: 8px;">{{ c.idCliente }}</td>
+  <td style="padding: 8px;">{{ c.nombre }}</td>
+  <td style="padding: 8px;">{{ c.apellido }}</td>
+  <td style="padding: 8px;">{{ c.tipoDocumento }}</td>
+  <td style="padding: 8px;">{{ c.documento }}</td>
+  <td style="padding: 8px;">{{ c.telefono }}</td>
+  <td style="padding: 8px;">{{ c.direccion }}</td>
+  <td style="padding: 8px;">{{ c.email }}</td>
+  <td style="padding: 8px;">{{ c.tipoCliente }}</td>
+  <td style="padding: 8px;">
+    <div style="display: flex; gap: 5px; justify-content: center;">
+      <button 
+        (click)="editarCliente(c)" 
+        style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+        title="Editar cliente"
+      >
+        ✏️ Editar
+      </button>
+      <button 
+        (click)="eliminarCliente(c)" 
+        style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;"
+        title="Eliminar cliente"
+      >
+        🗑️ Eliminar
+      </button>
+    </div>
+  </td>
 </tr>
 
-    </thead>
-    <tbody>
-      <tr *ngFor="let c of clientes">
-  <td>{{ c.idCliente }}</td>
-  <td>{{ c.nombre }}</td>
-  <td>{{ c.apellido }}</td>
-  <td>{{ c.tipoDocumento }}</td>
-  <td>{{ c.documento }}</td>
-  <td>{{ c.telefono }}</td>
-  <td>{{ c.direccion }}</td>
-  <td>{{ c.email }}</td>
-  <td>{{ c.tipoCliente }}</td>
-</tr>
+      </tbody>
+    </table>
+  </div>
 
-    </tbody>
-  </table>
+  <!-- PAGINACIÓN -->
+  <div *ngIf="totalPages > 1" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <button 
+      (click)="anteriorPagina()" 
+      [disabled]="currentPage === 1"
+      style="padding: 8px 12px; border: 1px solid #2196F3; background: white; color: #2196F3; border-radius: 5px; cursor: pointer;"
+      [style.opacity]="currentPage === 1 ? '0.5' : '1'"
+    >
+      ← Anterior
+    </button>
+
+    <span *ngFor="let page of getPageNumbers()" style="margin: 0 2px;">
+      <button 
+        (click)="cambiarPagina(page)"
+        [style.background]="page === currentPage ? '#2196F3' : 'white'"
+        [style.color]="page === currentPage ? 'white' : '#2196F3'"
+        style="padding: 8px 12px; border: 1px solid #2196F3; border-radius: 5px; cursor: pointer; min-width: 40px;"
+      >
+        {{ page }}
+      </button>
+    </span>
+
+    <button 
+      (click)="siguientePagina()" 
+      [disabled]="currentPage === totalPages"
+      style="padding: 8px 12px; border: 1px solid #2196F3; background: white; color: #2196F3; border-radius: 5px; cursor: pointer;"
+      [style.opacity]="currentPage === totalPages ? '0.5' : '1'"
+    >
+      Siguiente →
+    </button>
+
+    <span style="margin-left: 15px; color: #666; font-size: 14px;">
+      Página {{ currentPage }} de {{ totalPages }} ({{ totalClientes }} registros)
+    </span>
+  </div>
+
+  <!-- ESTADO DE CARGA -->
+  <div *ngIf="loading" style="text-align: center; padding: 20px; color: #2196F3;">
+    🔄 Cargando clientes...
+  </div>
+
+  <!-- MENSAJE DE ERROR -->
+  <div *ngIf="error" style="text-align: center; padding: 20px; color: #f44336; background-color: #ffebee; border-radius: 5px; margin-top: 10px;">
+    ❌ {{ error }}
+  </div>
+
+  <!-- MENSAJE VACÍO -->
+  <div *ngIf="!loading && !error && clientesFiltrados.length === 0" style="text-align: center; padding: 40px; color: #666;">
+    <div style="font-size: 48px; margin-bottom: 10px;">📭</div>
+    <h3>No se encontraron clientes</h3>
+    <p>{{ searchQuery ? 'Intenta con otros términos de búsqueda' : 'No hay clientes registrados en el sistema' }}</p>
+  </div>
 </div>

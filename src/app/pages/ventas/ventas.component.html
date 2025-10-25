@@ -1,0 +1,243 @@
+<div class="ventas-container">
+  
+  <!-- HEADER -->
+  <div class="header">
+    <h2>� Sistema POS - CGM Vidrios</h2>
+    <div class="stats">
+      <span class="stat">Productos: {{ productos.length }}</span>
+      <span class="stat">Carrito: {{ carrito.length }} items</span>
+      <span class="stat">Total Ventas: {{ ventas.length }}</span>
+    </div>
+  </div>
+
+  <div class="pos-layout">
+    
+    <!-- SECCIÓN PRODUCTOS -->
+    <div class="productos-section">
+      <h3>� Productos Disponibles</h3>
+      
+      <!-- BUSCADOR -->
+      <div class="search-box">
+        <input 
+          type="text" 
+          [(ngModel)]="busqueda" 
+          placeholder="🔍 Buscar productos..."
+          class="search-input"
+        >
+      </div>
+
+      <!-- GRID DE PRODUCTOS -->
+      <div class="productos-grid">
+        <button 
+          *ngFor="let producto of getProductosFiltrados()" 
+          class="producto-card"
+          [class.sin-stock]="producto.stock === 0"
+          (click)="agregarAlCarrito(producto)"
+          [title]="producto.stock === 0 ? 'Sin stock disponible' : 'Click para agregar al carrito'"
+          [disabled]="producto.stock === 0"
+        >
+          <div class="producto-header">
+            <h4>{{ producto.nombre }}</h4>
+            <span class="codigo">{{ producto.codigo }}</span>
+          </div>
+          
+          <div class="producto-body">
+            <div class="precio">{{ producto.precio | currency:'USD' }}</div>
+            <div class="stock" [class.stock-bajo]="producto.stock <= 5">
+              Stock: {{ producto.stock }}
+            </div>
+            <div class="categoria">{{ producto.categoria }}</div>
+          </div>
+
+          <div class="producto-footer">
+            <button 
+              class="btn-add-cart" 
+              [disabled]="producto.stock === 0"
+              (click)="$event.stopPropagation(); agregarAlCarrito(producto)"
+            >
+              {{ producto.stock === 0 ? '❌ Sin Stock' : '➕ Agregar' }}
+            </button>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- SECCIÓN CARRITO -->
+    <div class="carrito-section">
+      <h3>🛒 Carrito de Compras</h3>
+      
+      <!-- CARRITO VACÍO -->
+      <div *ngIf="carrito.length === 0" class="carrito-vacio">
+        <div class="icon">🛒</div>
+        <p>El carrito está vacío</p>
+        <small>Selecciona productos de la izquierda</small>
+      </div>
+
+      <!-- ITEMS DEL CARRITO -->
+      <div *ngIf="carrito.length > 0" class="carrito-items">
+        <div *ngFor="let item of carrito; trackBy: trackByProductoId" class="carrito-item">
+          
+          <div class="item-info">
+            <h5>{{ item.producto.nombre }}</h5>
+            <span class="item-codigo">{{ item.producto.codigo }}</span>
+            <div class="item-precio">{{ item.producto.precio | currency:'USD' }}</div>
+          </div>
+
+          <div class="item-controls">
+            <div class="cantidad-controls">
+              <button 
+                class="btn-cantidad" 
+                (click)="disminuirCantidad(item)"
+                [disabled]="item.cantidad <= 1"
+              >
+                ➖
+              </button>
+              
+              <input 
+                type="number" 
+                [(ngModel)]="item.cantidad" 
+                min="1" 
+                [max]="item.producto.stock"
+                class="cantidad-input"
+                (change)="validarCantidad(item)"
+              >
+              
+              <button 
+                class="btn-cantidad" 
+                (click)="aumentarCantidad(item)"
+                [disabled]="item.cantidad >= item.producto.stock"
+              >
+                ➕
+              </button>
+            </div>
+
+            <div class="item-total">
+              <strong>{{ item.cantidad * item.producto.precio | currency:'USD' }}</strong>
+            </div>
+
+            <button 
+              class="btn-remove" 
+              (click)="removerDelCarrito(item.producto.id!)"
+              title="Eliminar del carrito"
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMEN Y CHECKOUT -->
+      <div *ngIf="carrito.length > 0" class="carrito-resumen">
+        <div class="subtotal">
+          <span>Subtotal:</span>
+          <strong>{{ getSubtotal() | currency:'USD' }}</strong>
+        </div>
+        
+        <div class="total">
+          <span>TOTAL:</span>
+          <strong class="total-amount">{{ getSubtotal() | currency:'USD' }}</strong>
+        </div>
+
+        <div class="checkout-actions">
+          <button 
+            class="btn btn-secondary" 
+            (click)="limpiarCarrito()"
+          >
+            🗑️ Limpiar Carrito
+          </button>
+          
+          <button 
+            class="btn btn-primary btn-checkout" 
+            (click)="procesarVenta()"
+            [disabled]="procesandoVenta"
+          >
+            {{ procesandoVenta ? '⏳ Procesando...' : '💳 Procesar Venta' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <!-- HISTORIAL DE VENTAS -->
+  <div class="ventas-historial">
+    <h3>📋 Historial de Ventas</h3>
+    
+    <div class="ventas-filtros">
+      <input 
+        type="date" 
+        [(ngModel)]="fechaFiltro"
+        class="date-filter"
+        placeholder="Filtrar por fecha"
+      >
+      <button class="btn btn-secondary" (click)="limpiarFiltros()">
+        🔄 Limpiar Filtros
+      </button>
+    </div>
+
+    <!-- MENSAJE VACÍO -->
+    <div *ngIf="getVentasFiltradas().length === 0" class="empty-state">
+      📦 No hay ventas registradas
+      <p>Realiza tu primera venta usando el sistema POS</p>
+    </div>
+
+    <!-- TABLA DE VENTAS -->
+    <div class="table-container" *ngIf="getVentasFiltradas().length > 0">
+      <table class="ventas-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Productos</th>
+            <th>Total Items</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let venta of getVentasFiltradas()">
+            <td>{{ venta.id }}</td>
+            <td>{{ venta.fecha | date:'short' }}</td>
+            <td>
+              <div class="productos-venta">
+                <span class="producto-nombre">{{ venta.producto.nombre }}</span>
+                <small>{{ venta.cantidad }}x {{ venta.producto.precio | currency:'USD' }}</small>
+              </div>
+            </td>
+            <td class="cantidad">{{ venta.cantidad }}</td>
+            <td class="total">{{ venta.total | currency:'USD' }}</td>
+            <td class="acciones">
+              <button 
+                class="btn-icon info" 
+                (click)="verDetalleVenta(venta)"
+                title="Ver detalle"
+              >
+                👁️
+              </button>
+              <button 
+                class="btn-icon danger" 
+                (click)="cancelarVenta(venta.id!)" 
+                title="Cancelar venta"
+                *ngIf="venta.id"
+              >
+                ❌
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RESUMEN VENTAS -->
+    <div class="ventas-summary" *ngIf="ventas.length > 0">
+      <div class="summary-card">
+        <h4>💰 Resumen del Día</h4>
+        <div class="summary-stats">
+          <span>Total Ventas: {{ ventas.length }}</span>
+          <span>Items Vendidos: {{ getTotalItemsVendidos() }}</span>
+          <span>Ingresos: {{ calcularTotal() | currency:'USD' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>

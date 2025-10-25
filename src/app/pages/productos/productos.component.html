@@ -1,17 +1,369 @@
-<h2>Productos</h2>
-<table>
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Nombre</th>
-      <th>Precio</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let p of productos">
-      <td>{{ p.id }}</td>
-      <td>{{ p.nombre }}</td>
-      <td>{{ p.precio | currency:'USD' }}</td>
-    </tr>
-  </tbody>
-</table>
+<div class="productos-container">
+  
+  <!-- BARRA SUPERIOR -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <h2>📦 Gestión de Productos</h2>
+      <span class="product-count">{{ getProductosFiltrados().length }} productos{{ getProductosFiltrados().length !== totalProducts ? ' (de ' + totalProducts + ' total)' : '' }}</span>
+    </div>
+    
+    <div class="toolbar-right">
+      <button class="btn btn-success" (click)="loadProductos()" title="Recargar desde backend">
+        🔄 Recargar
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div class="filter-group">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        placeholder="🔍 Buscar productos..."
+        class="search-input"
+      >
+    </div>
+
+    <div class="filter-group">
+      <select [(ngModel)]="selectedCategory" class="filter-select">
+        <option value="">Todas las categorías</option>
+        <option value="Vidrios">Vidrios</option>
+        <option value="Marcos">Marcos</option>
+        <option value="Accesorios">Accesorios</option>
+      </select>
+
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="showOnlyWithStock" (change)="buscar()">
+        Solo con stock
+      </label>
+
+      <button class="btn btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-container">
+    <div *ngIf="loading" class="loading">🔄 Cargando productos...</div>
+    
+    <table class="products-table" *ngIf="!loading">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Producto</th>
+          <th>Código</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let producto of getProductosFiltrados()" [class.inactive]="!producto.activo">
+          <td>{{ producto.id }}</td>
+          <td>
+            <div class="product-info">
+              <strong>{{ producto.nombre }}</strong>
+              <small *ngIf="producto.descripcion">{{ producto.descripcion }}</small>
+            </div>
+          </td>
+          <td><code>{{ producto.codigo }}</code></td>
+          <td class="price">{{ producto.precio | currency:'USD' }}</td>
+          <td [class]="producto.stock <= 5 ? 'stock-low' : 'stock-ok'">
+            {{ producto.stock }}
+            <span *ngIf="producto.stock <= 5" class="stock-warning">⚠️</span>
+          </td>
+          <td>
+            <button 
+              class="status-toggle" 
+              [class.active]="producto.activo"
+              (click)="toggleEstado(producto)"
+            >
+              {{ producto.activo ? '✅ Activo' : '❌ Inactivo' }}
+            </button>
+          </td>
+          <td class="actions">
+            <button class="btn-icon" (click)="editarProducto(producto)" title="Editar">✏️</button>
+            <button class="btn-icon" (click)="ajustarStock(producto)" title="Ajustar stock">📊</button>
+            <button class="btn-icon danger" (click)="confirmarEliminar(producto)" title="Eliminar">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- MENSAJE VACÍO -->
+    <div *ngIf="!loading && productos.length === 0" class="empty-state">
+      📦 No se encontraron productos
+    </div>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <div class="pagination-info">
+      Página {{ currentPage }} de {{ totalPages }} ({{ totalProducts }} productos)
+    </div>
+    
+    <div class="pagination-controls">
+      <button class="btn btn-outline" (click)="previousPage()" [disabled]="currentPage === 1">
+        ⬅️ Anterior
+      </button>
+      
+      <div class="page-numbers">
+        <button 
+          *ngFor="let page of [].constructor(totalPages); let i = index"
+          class="btn btn-outline"
+          [class.active]="currentPage === i + 1"
+          (click)="changePage(i + 1)"
+        >
+          {{ i + 1 }}
+        </button>
+      </div>
+      
+      <button class="btn btn-outline" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        Siguiente ➡️
+      </button>
+    </div>
+
+    <div class="page-size">
+      <label>
+        Mostrar:
+        <select [(ngModel)]="pageSize" (change)="changePageSize()">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+        </select>
+        por página
+      </label>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL ELIMINAR -->
+<div class="modal" *ngIf="showDeleteModal">
+  <div class="modal-content">
+    <h3>🗑️ Confirmar eliminación</h3>
+    <p>¿Estás seguro de eliminar el producto <strong>{{ selectedProduct?.nombre }}</strong>?</p>
+    <p class="warning">Esta acción no se puede deshacer.</p>
+    
+    <div class="modal-actions">
+      <button class="btn btn-danger" (click)="eliminarProducto()" [disabled]="loading">
+        {{ loading ? 'Eliminando...' : 'Eliminar' }}
+      </button>
+      <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PRODUCTO -->
+<div class="modal" *ngIf="showEditModal">
+  <div class="modal-content modal-large">
+    <h3>✏️ Editar Producto</h3>
+    
+    <form (ngSubmit)="saveProduct()" #formRef="ngForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="nombre">Nombre *</label>
+          <input 
+            type="text" 
+            id="nombre"
+            [(ngModel)]="productForm.nombre" 
+            name="nombre"
+            class="form-control"
+            required
+            #nombre="ngModel"
+          >
+          <div class="error" *ngIf="nombre.invalid && nombre.touched">
+            El nombre es obligatorio
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="codigo">Código *</label>
+          <input 
+            type="text" 
+            id="codigo"
+            [(ngModel)]="productForm.codigo" 
+            name="codigo"
+            class="form-control"
+            required
+            #codigo="ngModel"
+          >
+          <div class="error" *ngIf="codigo.invalid && codigo.touched">
+            El código es obligatorio
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="precio">Precio *</label>
+          <input 
+            type="number" 
+            id="precio"
+            [(ngModel)]="productForm.precio" 
+            name="precio"
+            class="form-control"
+            min="0"
+            step="0.01"
+            required
+            #precio="ngModel"
+          >
+          <div class="error" *ngIf="precio.invalid && precio.touched">
+            El precio debe ser mayor o igual a 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="stock">Stock Inicial *</label>
+          <input 
+            type="number" 
+            id="stock"
+            [(ngModel)]="productForm.stock" 
+            name="stock"
+            class="form-control"
+            min="0"
+            required
+            #stock="ngModel"
+          >
+          <div class="error" *ngIf="stock.invalid && stock.touched">
+            El stock debe ser mayor o igual a 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="categoria">Categoría *</label>
+          <select 
+            id="categoria"
+            [(ngModel)]="productForm.categoria" 
+            name="categoria"
+            class="form-control"
+            required
+          >
+            <option value="">Seleccionar categoría</option>
+            <option value="Vidrios">Vidrios</option>
+            <option value="Marcos">Marcos</option>
+            <option value="Accesorios">Accesorios</option>
+          </select>
+        </div>
+
+        <div class="form-group form-group-full">
+          <label for="descripcion">Descripción</label>
+          <textarea 
+            id="descripcion"
+            [(ngModel)]="productForm.descripcion" 
+            name="descripcion"
+            class="form-control"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="productForm.activo" 
+              name="activo"
+            >
+            Producto activo
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="loading || !productForm.nombre || !productForm.codigo"
+        >
+          {{ loading ? 'Guardando...' : 'Actualizar' }}
+        </button>
+        
+        <button type="button" class="btn btn-outline" (click)="closeModal()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL AJUSTAR STOCK -->
+<div class="modal" *ngIf="showStockModal">
+  <div class="modal-content">
+    <h3>📊 Ajustar Stock - {{ selectedProduct?.nombre }}</h3>
+    <p class="stock-current">Stock actual: <strong>{{ selectedProduct?.stock }}</strong></p>
+    
+    <form (ngSubmit)="ajustarStockConfirm()" #stockForm="ngForm">
+      <div class="form-group">
+        <fieldset>
+          <legend>Tipo de ajuste</legend>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" [(ngModel)]="stockAdjustment.tipo" name="tipo" value="INCREMENTO" required>
+              ➕ Incrementar stock
+            </label>
+            <label class="radio-label">
+              <input type="radio" [(ngModel)]="stockAdjustment.tipo" name="tipo" value="DECREMENTO" required>
+              ➖ Decrementar stock
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="form-group">
+        <label for="cantidad">Cantidad</label>
+        <input 
+          type="number" 
+          id="cantidad"
+          [(ngModel)]="stockAdjustment.cantidad" 
+          name="cantidad"
+          class="form-control"
+          min="1"
+          required
+          #cantidad="ngModel"
+        >
+        <div class="error" *ngIf="cantidad.invalid && cantidad.touched">
+          La cantidad debe ser mayor a 0
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="motivo">Motivo</label>
+        <textarea 
+          id="motivo"
+          [(ngModel)]="stockAdjustment.motivo" 
+          name="motivo"
+          class="form-control"
+          rows="3"
+          placeholder="Describe el motivo del ajuste..."
+          required
+          #motivo="ngModel"
+        ></textarea>
+        <div class="error" *ngIf="motivo.invalid && motivo.touched">
+          El motivo es obligatorio
+        </div>
+      </div>
+
+      <div class="stock-preview" *ngIf="stockAdjustment.cantidad && stockAdjustment.tipo">
+        <strong>
+          Nuevo stock: 
+          {{ stockAdjustment.tipo === 'INCREMENTO' 
+             ? (selectedProduct?.stock || 0) + stockAdjustment.cantidad 
+             : (selectedProduct?.stock || 0) - stockAdjustment.cantidad }}
+        </strong>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="stockForm.invalid || loading"
+        >
+          {{ loading ? 'Ajustando...' : 'Confirmar Ajuste' }}
+        </button>
+        <button type="button" class="btn btn-outline" (click)="closeModal()">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

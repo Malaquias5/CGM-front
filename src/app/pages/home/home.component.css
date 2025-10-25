@@ -1,0 +1,197 @@
+.home-container {
+  font-family: "Poppins", sans-serif;
+  background-color: #f4f6f9;
+  color: #222;
+  padding-bottom: 3rem;
+}
+
+/* ===== HEADER ===== */
+.main-header {
+  position: relative;
+  height: 250px;
+  border-bottom: 4px solid #0077b6;
+  border-radius: 0 0 1.5rem 1.5rem;
+  overflow: hidden;
+}
+
+/* LOGO DE LA EMPRESA (pequeño, en la esquina) */
+.logo-container {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  z-index: 15;
+}
+
+.company-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* HEADER/BANNER DE FONDO */
+.header-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('/images/EADER.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  height: 100%;
+  padding: 1.5rem 2rem;
+  position: relative;
+}
+
+.header-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.header-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.header-text {
+  text-align: center;
+  z-index: 10;
+  position: relative;
+}
+
+.header-text h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+}
+
+.header-text p {
+  font-size: 1rem;
+  opacity: 0.85;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+/* ===== HERO ===== */
+.hero-section {
+  text-align: center;
+  margin: 3rem 0 2rem;
+}
+
+.hero-section h2 {
+  font-size: 1.8rem;
+  color: #0077b6;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #555;
+}
+
+/* ===== STATS ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.5rem;
+  padding: 0 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border-color: #4f46e5;
+}
+
+.stat-icon {
+  font-size: 2rem;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+.bg-green { background: #38b000; }
+.bg-blue { background: #0077b6; }
+.bg-purple { background: #7209b7; }
+.bg-orange { background: #ff8800; }
+
+/* ===== ACTIONS ===== */
+.quick-actions {
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1rem;
+  border: none;
+  border-radius: 0.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.action-btn:hover {
+  transform: scale(1.03);
+}
+
+.primary { background: #0077b6; }
+.secondary { background: #3a86ff; }
+.success { background: #38b000; }
+.warning { background: #ff8800; }
+
+/* ===== FOOTER ===== */
+.main-footer {
+  background-color: #0077b6;
+  color: white;
+  text-align: center;
+  padding: 1.2rem;
+  border-top: 4px solid #023e8a;
+  border-radius: 1.5rem 1.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.main-footer strong {
+  color: #caf0f8;
+}

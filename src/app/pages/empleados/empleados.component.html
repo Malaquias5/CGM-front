@@ -1,34 +1,139 @@
-<h2 style="text-align:center; color:#333;">Lista de Empleados</h2>
+<h2 style="text-align:center; color:#333;">Gestión de Empleados</h2>
 
 <div style="overflow-x:auto; padding: 10px; border: 2px solid #4CAF50; border-radius: 10px; background-color:#f9f9f9;">
-  <table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-    <thead>
-      <tr style="background-color:#4CAF50; color:white; text-align:center;">
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Apellido</th>
-        <th>DNI</th>
-        <th>Teléfono</th>
-        <th>Dirección</th>
-        <th>Cargo</th>
-        <th>Usuario</th>
-        <th>Contraseña</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let e of empleados" style="text-align:center; border-bottom: 1px solid #ddd; background-color:#fff;">
-        <td>{{ e.idEmpleado }}</td>
-        <td>{{ e.nombre }}</td>
-        <td>{{ e.apellido }}</td>
-        <td>{{ e.dni }}</td>
-        <td>{{ e.telefono }}</td>
-        <td>{{ e.direccion }}</td>
-        <td>{{ e.cargo }}</td>
-        <td>{{ e.usuario }}</td>
-        <td>{{ e.contrasena }}</td>
-        <td [style.color]="e.estado ? 'green' : 'red'">{{ e.estado ? 'Activo' : 'Inactivo' }}</td>
-      </tr>
-    </tbody>
-  </table>
+  
+  <!-- BARRA DE BÚSQUEDA -->
+  <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+    <div style="flex: 1;">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        (input)="buscar()"
+        placeholder="🔍 Buscar empleados por nombre, DNI o cargo..."
+        style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 25px; font-size: 14px; outline: none;"
+      />
+    </div>
+    <div style="color: #666; font-size: 14px; white-space: nowrap;">
+      {{ totalEmpleados }} empleado{{ totalEmpleados !== 1 ? 's' : '' }}
+    </div>
+  </div>
+
+  <!-- TABLA DE EMPLEADOS -->
+  <div style="overflow-x: auto;">
+    <table style="width:100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+      <thead>
+        <tr style="background-color:#4CAF50; color:white; text-align:center;">
+          <th style="padding: 12px;">ID</th>
+          <th style="padding: 12px;">Nombre</th>
+          <th style="padding: 12px;">Apellido</th>
+          <th style="padding: 12px;">DNI</th>
+          <th style="padding: 12px;">Teléfono</th>
+          <th style="padding: 12px;">Dirección</th>
+          <th style="padding: 12px;">Cargo</th>
+          <th style="padding: 12px;">Usuario</th>
+          <th style="padding: 12px;">Estado</th>
+          <th style="padding: 12px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of empleadosFiltrados" style="text-align:center; border-bottom: 1px solid #ddd; background-color:#fff;">
+          <td style="padding: 12px;">{{ e.idEmpleado }}</td>
+          <td style="padding: 12px;">{{ e.nombre }}</td>
+          <td style="padding: 12px;">{{ e.apellido }}</td>
+          <td style="padding: 12px;">{{ e.dni }}</td>
+          <td style="padding: 12px;">{{ e.telefono }}</td>
+          <td style="padding: 12px;">{{ e.direccion }}</td>
+          <td style="padding: 12px;">{{ e.cargo }}</td>
+          <td style="padding: 12px;">{{ e.usuario }}</td>
+          <td style="padding: 12px;" [style.color]="e.estado ? 'green' : 'red'">
+            <span [style.background]="e.estado ? '#e8f5e8' : '#ffe8e8'" 
+                  [style.padding]="'4px 8px'" 
+                  [style.border-radius]="'12px'" 
+                  [style.font-size]="'12px'">
+              {{ e.estado ? '✅ Activo' : '❌ Inactivo' }}
+            </span>
+          </td>
+          <td style="padding: 12px;">
+            <div style="display: flex; gap: 5px; justify-content: center;">
+              <button 
+                (click)="editarEmpleado(e)" 
+                style="background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;"
+                title="Editar empleado"
+              >
+                ✏️ Editar
+              </button>
+              <button 
+                (click)="eliminarEmpleado(e)" 
+                style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;"
+                title="Eliminar empleado"
+              >
+                🗑️ Eliminar
+              </button>
+              <button 
+                (click)="toggleEstadoEmpleado(e)" 
+                [style.background]="e.estado ? '#ff9800' : '#2196F3'"
+                style="color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;"
+                [title]="e.estado ? 'Desactivar empleado' : 'Activar empleado'"
+              >
+                {{ e.estado ? '⏸️ Desactivar' : '▶️ Activar' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div *ngIf="totalPages > 1" style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <button 
+      (click)="anteriorPagina()" 
+      [disabled]="currentPage === 1"
+      style="padding: 8px 12px; border: 1px solid #4CAF50; background: white; color: #4CAF50; border-radius: 5px; cursor: pointer;"
+      [style.opacity]="currentPage === 1 ? '0.5' : '1'"
+    >
+      ← Anterior
+    </button>
+
+    <span *ngFor="let page of getPageNumbers()" style="margin: 0 2px;">
+      <button 
+        (click)="cambiarPagina(page)"
+        [style.background]="page === currentPage ? '#4CAF50' : 'white'"
+        [style.color]="page === currentPage ? 'white' : '#4CAF50'"
+        style="padding: 8px 12px; border: 1px solid #4CAF50; border-radius: 5px; cursor: pointer; min-width: 40px;"
+      >
+        {{ page }}
+      </button>
+    </span>
+
+    <button 
+      (click)="siguientePagina()" 
+      [disabled]="currentPage === totalPages"
+      style="padding: 8px 12px; border: 1px solid #4CAF50; background: white; color: #4CAF50; border-radius: 5px; cursor: pointer;"
+      [style.opacity]="currentPage === totalPages ? '0.5' : '1'"
+    >
+      Siguiente →
+    </button>
+
+    <span style="margin-left: 15px; color: #666; font-size: 14px;">
+      Página {{ currentPage }} de {{ totalPages }} ({{ totalEmpleados }} registros)
+    </span>
+  </div>
+
+  <!-- ESTADO DE CARGA -->
+  <div *ngIf="loading" style="text-align: center; padding: 20px; color: #4CAF50;">
+    🔄 Cargando empleados...
+  </div>
+
+  <!-- MENSAJE DE ERROR -->
+  <div *ngIf="error" style="text-align: center; padding: 20px; color: #f44336; background-color: #ffebee; border-radius: 5px; margin-top: 10px;">
+    ❌ {{ error }}
+  </div>
+
+  <!-- MENSAJE VACÍO -->
+  <div *ngIf="!loading && !error && empleadosFiltrados.length === 0" style="text-align: center; padding: 40px; color: #666;">
+    <div style="font-size: 48px; margin-bottom: 10px;">👥</div>
+    <h3>No se encontraron empleados</h3>
+    <p>{{ searchQuery ? 'Intenta con otros términos de búsqueda' : 'No hay empleados registrados en el sistema' }}</p>
+  </div>
 </div>
